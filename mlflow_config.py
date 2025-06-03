@@ -23,8 +23,8 @@ class MLFlowConfig:
     MODEL_VERSION = os.getenv("MODEL_VERSION", None)  # Se None, usa a versão mais recente do stage
     
     # Configurações de tracking
-    ENABLE_TRACKING = os.getenv("ENABLE_MLFLOW_TRACKING", "true").lower() == "true"
-    ENABLE_MODEL_REGISTRY = os.getenv("ENABLE_MODEL_REGISTRY", "true").lower() == "true"
+    ENABLE_TRACKING = os.getenv("ENABLE_MLFLOW_TRACKING", "false").lower() == "true"
+    ENABLE_MODEL_REGISTRY = os.getenv("ENABLE_MODEL_REGISTRY", "false").lower() == "true"
     
     # Configurações de autenticação (se necessário)
     MLFLOW_USERNAME = os.getenv("MLFLOW_USERNAME", None)
@@ -48,7 +48,15 @@ class MLFlowManager:
         self.config = MLFlowConfig()
         self.experiment_id = None
         self.run_id = None
-        self._setup_mlflow()
+
+        # Só configurar MLFlow se estiver habilitado
+        if self.config.ENABLE_TRACKING:
+            try:
+                self._setup_mlflow()
+            except Exception as e:
+                logger.error(f"❌ Erro ao configurar MLFlow: {str(e)}")
+                logger.warning("⚠️ Desabilitando MLFlow devido ao erro")
+                self.config.ENABLE_TRACKING = False
     
     def _setup_mlflow(self):
         """Configura o MLFlow"""
