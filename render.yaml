@@ -16,3 +16,5 @@ services:
         value: false
       - key: ENVIRONMENT
         value: production
+      - key: DEV_MODE
+        value: true

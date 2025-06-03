@@ -41,6 +41,9 @@ class MLService:
         # Configurar MLFlow
         self._setup_mlflow_integration()
 
+        # Modo de desenvolvimento (sem modelo real)
+        self.dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
+
     def _setup_mlflow_integration(self):
         """Configura integração com MLFlow"""
         try:
@@ -127,6 +130,20 @@ class MLService:
         start_time = time.time()
 
         try:
+            # Modo de desenvolvimento (sem modelo real)
+            if self.dev_mode:
+                self.is_loaded = True
+                load_time = time.time() - start_time
+
+                mlflow_manager.log_metrics({
+                    "model_load_time_seconds": load_time,
+                    "model_load_success": 1,
+                    "dev_mode": 1
+                })
+
+                logger.info("🎭 Modo de desenvolvimento ativado - usando predições mock")
+                return True
+
             success = False
 
             # Tentar carregar do MLFlow primeiro se habilitado
@@ -213,6 +230,10 @@ class MLService:
         start_time = time.time()
 
         try:
+            # Modo de desenvolvimento (predição mock)
+            if self.dev_mode:
+                return self._mock_prediction(start_time)
+
             if not self.is_loaded:
                 raise ValueError("Model not loaded")
 
@@ -270,6 +291,38 @@ class MLService:
 
             logger.error(f"❌ Error making prediction: {str(e)}")
             raise
+
+    def _mock_prediction(self, start_time: float) -> Tuple[str, float, Dict[str, float]]:
+        """Predição mock para modo de desenvolvimento"""
+        import random
+
+        # Simular tempo de processamento
+        time.sleep(0.1)
+
+        # Predição aleatória realística
+        predictions = np.random.dirichlet([2, 1, 1, 3])  # Favorece normal e cataract
+
+        predicted_class_idx = np.argmax(predictions)
+        predicted_class = self.class_names[predicted_class_idx]
+        confidence = float(predictions[predicted_class_idx] * 100)
+
+        all_predictions = {}
+        for i, class_name in enumerate(self.class_names):
+            all_predictions[class_name] = float(predictions[i] * 100)
+
+        inference_time = time.time() - start_time
+
+        # Log métricas mock
+        mlflow_manager.log_metrics({
+            "prediction_inference_time_ms": inference_time * 1000,
+            "prediction_confidence": confidence,
+            "prediction_count": 1,
+            "mock_mode": 1
+        })
+
+        logger.info(f"🎭 MOCK Prediction: {predicted_class} with {confidence:.2f}% confidence")
+
+        return predicted_class, confidence, all_predictions
     
     def is_model_loaded(self) -> bool:
         """Verifica se o modelo está carregado"""

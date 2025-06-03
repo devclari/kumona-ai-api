@@ -26,7 +26,7 @@ class ModelDownloader:
                 "name": "GitHub Releases",
                 "url": "https://github.com/devclari/kumona-ai-api/releases/download/v1.0.0/best_model.keras",
                 "method": self._download_from_url,
-                "timeout": 300
+                "timeout": 180
             },
             {
                 "name": "Direct URL",

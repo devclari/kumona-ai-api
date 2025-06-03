@@ -169,3 +169,11 @@ Downloading matplotlib-3.10.3-cp312-cp312-win_amd64.whl (8.1 MB)
 Downloading numpy-2.2.6-cp312-cp312-win_amd64.whl (12.6 MB)
    ---------------------------------------- 12.6/12.6 MB 55.2 kB/s eta 0:00:00
 Downloading pandas-2.2.3-cp312-cp312-win_amd64.whl (11.5 MB)
+   ---------------------------------------- 11.5/11.5 MB 54.2 kB/s eta 0:00:00
+Downloading pyarrow-19.0.1-cp312-cp312-win_amd64.whl (25.3 MB)
+   ---------------------------------------- 25.3/25.3 MB 43.0 kB/s eta 0:00:00
+Downloading s3transfer-0.13.0-py3-none-any.whl (85 kB)
+Downloading scikit_learn-1.6.1-cp312-cp312-win_amd64.whl (11.1 MB)
+   ---------------------------------------- 11.1/11.1 MB 48.8 kB/s eta 0:00:00
+Downloading scipy-1.15.3-cp312-cp312-win_amd64.whl (41.0 MB)
+   -----------                              11.8/41.0 MB ? eta -:--:--
