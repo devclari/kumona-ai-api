@@ -15,6 +15,9 @@ import time
 from mlflow_config import mlflow_manager
 from mlflow_utils import performance_monitor
 
+# Importar downloader de modelos
+from model_downloader import model_downloader
+
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -112,13 +115,9 @@ class MLService:
             return False
 
     def download_model(self) -> bool:
-        """Baixa o modelo se não existir"""
+        """Baixa o modelo usando o downloader multi-fonte"""
         try:
-            if not os.path.exists(self.model_path):
-                logger.info("🔽 Downloading model...")
-                gdown.download(self.model_url, self.model_path, quiet=False)
-                logger.info("✅ Model downloaded successfully")
-            return True
+            return model_downloader.download_model()
         except Exception as e:
             logger.error(f"❌ Error downloading model: {str(e)}")
             return False
