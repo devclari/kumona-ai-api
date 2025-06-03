@@ -1,0 +1,66 @@
+name: eye-disease-classifier
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      port: {type: int, default: 8080}
+      mlflow_uri: {type: str, default: "http://localhost:5000"}
+      log_level: {type: str, default: "INFO"}
+      enable_model_registry: {type: str, default: "false"}
+      model_stage: {type: str, default: "Production"}
+    command: >
+      python app.py 
+      --port {port} 
+      --mlflow-uri {mlflow_uri} 
+      --log-level {log_level}
+      --enable-model-registry {enable_model_registry}
+      --model-stage {model_stage}
+  
+  serve_model:
+    parameters:
+      model_name: {type: str, default: "eye-disease-model"}
+      model_stage: {type: str, default: "Production"}
+      port: {type: int, default: 8001}
+      host: {type: str, default: "0.0.0.0"}
+    command: >
+      mlflow models serve 
+      --model-uri models:/{model_name}/{model_stage} 
+      --port {port} 
+      --host {host}
+  
+  register_model:
+    parameters:
+      model_path: {type: str, default: "best_model.keras"}
+      model_name: {type: str, default: "eye-disease-model"}
+      mlflow_uri: {type: str, default: "http://localhost:5000"}
+    command: >
+      python register_model_mlflow.py 
+      --model-path {model_path} 
+      --model-name {model_name} 
+      --mlflow-uri {mlflow_uri}
+  
+  test_api:
+    parameters:
+      api_url: {type: str, default: "http://localhost:8080"}
+      mlflow_url: {type: str, default: "http://localhost:5000"}
+    command: >
+      python test_mlflow_integration.py 
+      --api-url {api_url} 
+      --mlflow-url {mlflow_url}
+  
+  deploy:
+    parameters:
+      deploy_type: {type: str, default: "api"}
+      port: {type: int, default: 8080}
+      mlflow_uri: {type: str, default: "http://localhost:5000"}
+      model_name: {type: str, default: "eye-disease-model"}
+      model_stage: {type: str, default: "Production"}
+    command: >
+      python deploy_mlflow.py 
+      --type {deploy_type} 
+      --port {port} 
+      --mlflow-uri {mlflow_uri} 
+      --model-name {model_name} 
+      --model-stage {model_stage}

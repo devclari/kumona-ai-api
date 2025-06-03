@@ -1,11 +1,13 @@
 # Eye Disease Classifier API
 
-Uma API REST para classificação de doenças oculares usando deep learning, pronta para deploy no Google Cloud Run.
+Uma API REST para classificação de doenças oculares usando deep learning, com integração MLFlow para tracking e monitoramento, pronta para deploy no Google Cloud Run.
 
 ## 🎯 Funcionalidades
 
 - **Classificação de Doenças Oculares**: Detecta catarata, retinopatia diabética, glaucoma ou olhos normais
 - **API REST**: Interface simples e bem documentada
+- **Integração MLFlow**: Tracking automático de experimentos e métricas
+- **Monitoramento Avançado**: Detecção de drift e análise de performance
 - **Documentação Automática**: Swagger UI integrado
 - **Pronto para Cloud**: Containerizado e otimizado para Google Cloud Run
 - **Health Checks**: Monitoramento de saúde da aplicação
@@ -116,7 +118,20 @@ python app.py
 
 A API estará disponível em `http://localhost:8080`
 
-### Docker Local
+### Docker Local com MLFlow
+
+```bash
+# Execute com Docker Compose (inclui MLFlow)
+docker-compose up -d
+
+# Verificar logs
+docker-compose logs -f
+
+# Parar serviços
+docker-compose down
+```
+
+### Docker Local (apenas API)
 
 ```bash
 # Build da imagem
@@ -125,6 +140,44 @@ docker build -t eye-disease-classifier .
 # Execute o container
 docker run -p 8080:8080 eye-disease-classifier
 ```
+
+## 📊 MLFlow Integration
+
+Esta API está integrada com MLFlow para tracking avançado de experimentos e monitoramento de modelos.
+
+### Funcionalidades MLFlow
+
+- **Tracking Automático**: Todas as predições são automaticamente trackadas
+- **Métricas de Performance**: Tempo de inferência, confiança, distribuição de classes
+- **Detecção de Drift**: Monitoramento automático de degradação do modelo
+- **Model Registry**: Suporte para versionamento de modelos (opcional)
+- **Interface Web**: Dashboard visual para análise de métricas
+
+### Acesso ao MLFlow
+
+Quando executado com `docker-compose up`:
+
+- **MLFlow UI**: http://localhost:5000
+- **API**: http://localhost:8080
+- **API Docs**: http://localhost:8080/docs
+
+### Configuração MLFlow
+
+```bash
+# Variáveis de ambiente para MLFlow
+export MLFLOW_TRACKING_URI=http://localhost:5000
+export ENABLE_MLFLOW_TRACKING=true
+export MLFLOW_EXPERIMENT_NAME=eye-disease-classifier
+```
+
+### Teste da Integração
+
+```bash
+# Execute o script de teste
+python test_mlflow_integration.py
+```
+
+Para mais detalhes, consulte o [Guia MLFlow](MLFLOW_GUIDE.md).
 
 ## 📖 Uso da API
 

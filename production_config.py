@@ -56,6 +56,15 @@ class ProductionConfig:
     ENABLE_METRICS = True
     METRICS_ENDPOINT = "/metrics"
     HEALTH_ENDPOINT = "/health"
+
+    # Configurações do MLFlow
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "eye-disease-classifier")
+    MLFLOW_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "eye-disease-model")
+    ENABLE_MLFLOW_TRACKING = os.getenv("ENABLE_MLFLOW_TRACKING", "true").lower() == "true"
+    ENABLE_MODEL_REGISTRY = os.getenv("ENABLE_MODEL_REGISTRY", "false").lower() == "true"
+    MODEL_STAGE = os.getenv("MODEL_STAGE", "Production")
+    MODEL_VERSION = os.getenv("MODEL_VERSION", None)
     
     @classmethod
     def get_tf_env_vars(cls) -> Dict[str, str]:

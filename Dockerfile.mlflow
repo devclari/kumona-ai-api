@@ -1,0 +1,69 @@
+# Dockerfile otimizado para deploy MLFlow
+FROM python:3.11-slim
+
+# Metadados
+LABEL maintainer="Eye Disease Classifier Team"
+LABEL description="Eye Disease Classifier API with MLFlow integration"
+LABEL version="1.0.0"
+
+# Configurar usuário não-root
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    git \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Configurar diretório de trabalho
+WORKDIR /app
+
+# Copiar requirements primeiro (para cache do Docker)
+COPY requirements.txt .
+
+# Instalar dependências Python
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copiar código da aplicação
+COPY . .
+
+# Criar diretórios necessários
+RUN mkdir -p logs mlruns mlflow_artifacts && \
+    chown -R appuser:appuser /app
+
+# Configurar variáveis de ambiente
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8080
+
+# Configurações MLFlow padrão
+ENV MLFLOW_TRACKING_URI=http://mlflow:5000
+ENV MLFLOW_EXPERIMENT_NAME=eye-disease-classifier
+ENV MLFLOW_MODEL_NAME=eye-disease-model
+ENV ENABLE_MLFLOW_TRACKING=true
+ENV ENABLE_MODEL_REGISTRY=false
+ENV MODEL_STAGE=Production
+
+# Configurações TensorFlow para produção
+ENV TF_CPP_MIN_LOG_LEVEL=2
+ENV TF_ENABLE_ONEDNN_OPTS=0
+ENV OMP_NUM_THREADS=2
+ENV TF_NUM_INTEROP_THREADS=2
+ENV TF_NUM_INTRAOP_THREADS=2
+
+# Expor porta
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Mudar para usuário não-root
+USER appuser
+
+# Comando de inicialização
+CMD ["python", "app.py"]

@@ -13,6 +13,9 @@ from ml_service import ml_service
 from monitoring import log_request, log_prediction, log_health_check, structured_logger, metrics
 from production_config import get_config
 
+# Importar MLFlow
+from mlflow_utils import setup_mlflow_for_api, cleanup_mlflow_for_api, mlflow_track_prediction, mlflow_track_health_check
+
 # Carregar configurações
 config = get_config()
 
@@ -29,6 +32,13 @@ async def lifespan(app: FastAPI):
     # Startup
     structured_logger.log_startup()
     logger.info("🚀 Starting Eye Disease Classifier API...")
+
+    # Configurar MLFlow
+    mlflow_setup_success = setup_mlflow_for_api()
+    if mlflow_setup_success:
+        logger.info("✅ MLFlow configurado com sucesso")
+    else:
+        logger.warning("⚠️ MLFlow não pôde ser configurado, continuando sem tracking")
 
     # Carregar modelo na inicialização
     import time
@@ -52,8 +62,13 @@ async def lifespan(app: FastAPI):
     yield
 
     # Shutdown
-    structured_logger.log_shutdown()
     logger.info("🛑 Shutting down API...")
+
+    # Cleanup MLFlow
+    cleanup_mlflow_for_api()
+
+    structured_logger.log_shutdown()
+    logger.info("✅ API shutdown completed")
 
 # Criar aplicação FastAPI
 app = FastAPI(
@@ -127,6 +142,7 @@ async def root():
     )
 
 @app.get("/health", response_model=HealthResponse)
+@mlflow_track_health_check
 async def health_check():
     """Health check endpoint"""
     log_health_check()
@@ -143,6 +159,7 @@ async def get_metrics():
 
 @app.post("/predict", response_model=PredictionResponse)
 @log_prediction
+@mlflow_track_prediction
 async def predict_disease(file: UploadFile = File(..., description="Imagem do olho para classificação")):
     """
     Classifica doenças oculares a partir de uma imagem

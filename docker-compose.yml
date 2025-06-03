@@ -1,14 +1,49 @@
 version: '3.8'
 
 services:
+  # Servidor MLFlow
+  mlflow:
+    image: python:3.11-slim
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+      - ./mlflow_artifacts:/mlflow_artifacts
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=file:///mlruns
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow_artifacts
+    command: >
+      bash -c "
+        pip install mlflow>=2.8.0 &&
+        mlflow server
+        --backend-store-uri file:///mlruns
+        --default-artifact-root /mlflow_artifacts
+        --host 0.0.0.0
+        --port 5000
+      "
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # API Principal
   api:
     build: .
     ports:
       - "8080:8080"
     environment:
       - LOG_LEVEL=INFO
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_EXPERIMENT_NAME=eye-disease-classifier
+      - ENABLE_MLFLOW_TRACKING=true
+      - ENABLE_MODEL_REGISTRY=false
     volumes:
       - ./logs:/app/logs
+    depends_on:
+      - mlflow
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
@@ -16,3 +51,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+volumes:
+  mlruns:
+  mlflow_artifacts:
