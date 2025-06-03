@@ -49,37 +49,111 @@ class ModelDownloader:
                 file_size = os.path.getsize(self.model_path) / (1024 * 1024)
                 logger.info(f"✅ Model already exists locally ({file_size:.1f} MB)")
                 return True
-            
+
+            # Verificar se existem partes do modelo para reconstituir
+            if self._try_reconstruct_from_parts():
+                return True
+
             logger.info("🔽 Starting model download...")
-            
+
             for source in self.download_sources:
                 logger.info(f"🔄 Trying {source['name']}...")
-                
+
                 try:
                     start_time = time.time()
-                    
+
                     if source["method"](source["url"], source.get("timeout", 300)):
                         download_time = time.time() - start_time
                         file_size = os.path.getsize(self.model_path) / (1024 * 1024)
-                        
+
                         logger.info(f"✅ Model downloaded from {source['name']}")
                         logger.info(f"   Size: {file_size:.1f} MB")
                         logger.info(f"   Time: {download_time:.1f}s")
-                        
+
                         return True
-                        
+
                 except Exception as e:
                     logger.warning(f"⚠️ Failed to download from {source['name']}: {str(e)}")
                     # Limpar arquivo parcial se existir
                     if os.path.exists(self.model_path):
                         os.remove(self.model_path)
                     continue
-            
+
             logger.error("❌ Failed to download model from all sources")
             return False
-            
+
         except Exception as e:
             logger.error(f"❌ Error in model download: {str(e)}")
+            return False
+
+    def _try_reconstruct_from_parts(self) -> bool:
+        """Tenta reconstituir modelo a partir de partes"""
+        try:
+            import json
+            import hashlib
+
+            base_name = os.path.splitext(self.model_path)[0]
+            info_file = f"{base_name}_parts.json"
+
+            if not os.path.exists(info_file):
+                return False
+
+            logger.info("🔧 Encontradas partes do modelo, reconstituindo...")
+
+            # Carregar informações das partes
+            with open(info_file, 'r') as f:
+                info = json.load(f)
+
+            # Verificar se todas as partes existem
+            missing_parts = []
+            for chunk in info["chunks"]:
+                if not os.path.exists(chunk["filename"]):
+                    missing_parts.append(chunk["filename"])
+
+            if missing_parts:
+                logger.warning(f"⚠️ Partes faltando: {missing_parts}")
+                return False
+
+            # Reconstituir arquivo
+            logger.info(f"📦 Juntando {len(info['chunks'])} partes...")
+
+            with open(self.model_path, 'wb') as output_file:
+                for i, chunk in enumerate(info["chunks"]):
+                    chunk_filename = chunk["filename"]
+
+                    with open(chunk_filename, 'rb') as chunk_file:
+                        chunk_data = chunk_file.read()
+
+                        # Verificar hash da parte
+                        chunk_hash = hashlib.sha256(chunk_data).hexdigest()
+                        if chunk_hash != chunk["hash"]:
+                            logger.error(f"❌ Hash inválido para {chunk_filename}")
+                            return False
+
+                        output_file.write(chunk_data)
+
+                    if (i + 1) % 5 == 0:  # Log a cada 5 partes
+                        logger.info(f"   📥 Processadas {i + 1}/{len(info['chunks'])} partes")
+
+            # Verificar hash final
+            logger.info("🔐 Verificando integridade...")
+            sha256_hash = hashlib.sha256()
+            with open(self.model_path, "rb") as f:
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+
+            final_hash = sha256_hash.hexdigest()
+
+            if final_hash == info["original_hash"]:
+                file_size = os.path.getsize(self.model_path) / (1024 * 1024)
+                logger.info(f"✅ Modelo reconstituído com sucesso ({file_size:.1f} MB)")
+                return True
+            else:
+                logger.error("❌ Hash do arquivo final não confere")
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Erro na reconstituição: {str(e)}")
             return False
     
     def _download_from_url(self, url: str, timeout: int = 300) -> bool:

@@ -49,12 +49,12 @@ mlruns/
 mlflow_artifacts/
 model_info.txt
 
-# Model files (muito grandes para Git)
-*.keras
-*.h5
-*.pkl
-*.joblib
-best_model.keras
+# Model files (agora usando Git LFS)
+# *.keras - removido, usando LFS
+# *.h5 - removido, usando LFS
+# *.pkl - removido, usando LFS
+# *.joblib - removido, usando LFS
+# best_model.keras - removido, usando LFS
 
 # Environment variables
 .env
